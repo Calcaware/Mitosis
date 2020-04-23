@@ -1,0 +1,80 @@
+#!/usr/bin/node
+
+const fs = require('fs');
+const usage = "Usage: " + process.argv[1].split("/")[process.argv[1].split("/").length-1] + " [action] [filename] [*filename_2]\n   Actions:\n      -s   --split           Split the input file\n      -j   --join            Join the input files";
+
+
+function randomInt(min, max) {
+	min = Math.ceil(min);
+	max = Math.floor(max);
+	return Math.floor(Math.random() * (max - min)) + min;
+}
+
+
+function split(filename) {
+	var file = fs.readFileSync(filename, "utf8");
+	process.stdout.write("Splitting " + filename + "... ");
+	var file_1 = "";
+	var file_2 = "";
+	for (let i = 0; i < file.length; i++) {
+		let byte = file[i].charCodeAt(0);
+		let random = randomInt(11, byte-1);
+		let byte_1 = byte - random;
+		let char_1 = String.fromCharCode(byte_1);
+		let char_2 = String.fromCharCode(random);
+		file_1 += char_1;
+		file_2 += char_2;
+	}
+	fs.writeFileSync(filename + ".0", file_1);
+	fs.writeFileSync(filename + ".1", file_2);
+	process.stdout.write("Done\n");
+	return true;
+}
+
+
+function join(filename_1, filename_2) {
+	var file_1 = fs.readFileSync(filename_1, "utf8");
+	var file_2 = fs.readFileSync(filename_2, "utf8");
+	if (file_1.length != file_2.length)
+		return console.log("Error: Incompatible files.");
+	process.stdout.write("Joining " + filename_1 + " and " + filename_2 + "... ");
+	let file_out = "";
+	for (let i = 0; i < file_1.length; i++) {
+		let byte_1 = file_1[i].charCodeAt(0);
+		let byte_2 = file_2[i].charCodeAt(0);
+		let byte_out = byte_1 + byte_2;
+		let char_out = String.fromCharCode(byte_out);
+		file_out += char_out;
+	}
+	let filename_out = filename_1.split(".");
+	filename_out.pop();
+	filename_out = filename_out.join(".");
+	fs.writeFileSync(filename_out + ".out", file_out);
+	process.stdout.write("Done\n");
+	return true;
+}
+
+
+(()=>{
+	if (process.argv.length < 4 || process.argv.length > 5)
+		return console.log(usage);
+	try {
+		if (process.argv.indexOf("-h") !== -1 || process.argv.indexOf("--help") !== -1)
+			return console.log(usage);
+		if (process.argv[2] != "-s" && process.argv[2] != "-j")
+			return console.log(usage);
+		if (process.argv[2] == "-s") {
+			if (process.argv.length != 4)
+				return console.log(usage);
+			return split(process.argv[3]);
+		}
+		else if (process.argv[2] == "-j") {
+			if (process.argv.length != 5)
+				return console.log(usage);
+			return join(process.argv[3], process.argv[4]);
+		}
+	}
+	catch (error) {
+		console.log(error.message);
+	}
+})();
